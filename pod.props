@@ -1,0 +1,6 @@
+podName = fanxServer
+summary = web server base on java NIO
+version = 1.0
+depends = sys 2.0, std 1.0, concurrent 1.0
+srcDirs = fan/*,test/*
+javaDirs = java/
