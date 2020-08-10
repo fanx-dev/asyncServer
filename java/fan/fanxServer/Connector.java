@@ -5,7 +5,7 @@
  */
 package fan.fanxServer;
 
-import fan.fanxServer.NioSelector.Event;
+import fan.fanxServer.NioEvent;
 import static fan.fanxServer.NioSelector.debug;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -107,7 +107,7 @@ public class Connector extends Thread {
             Worker handler = (Worker) workerFactory.create();
             handler.selector = nioSelector;
             handler.factory = workerFactory;
-            Event event = new Event(client, handler);
+            NioEvent event = new NioEvent(client, handler);
             
             if (debug) System.out.println("accept event: "+event);
             nioSelector.register(event);

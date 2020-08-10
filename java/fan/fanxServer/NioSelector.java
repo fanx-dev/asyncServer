@@ -5,7 +5,9 @@
  */
 package fan.fanxServer;
 
+import static fan.fanxServer.NioSelector.debug;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -27,51 +29,15 @@ public class NioSelector extends Thread {
     public static boolean debug = false;
 
     private Selector selector;
-    private Queue<Event> queue = new ConcurrentLinkedQueue<Event>();
+    private Queue<NioEvent> queue = new ConcurrentLinkedQueue<NioEvent>();
     private boolean isValid = true;
     
-    public static class Event {
-        SocketChannel socket;
-        int interestOps;
-        Worker handler;
-        
-        Object promise;
-        Object buffer;
-        long expectSize;
-        long readOrWriteSize;
-        boolean finished;
-        
-        public Event(SocketChannel socket, Worker handler) {
-            this.socket = socket;
-            interestOps = SelectionKey.OP_READ;
-            this.handler = handler;
-            finished = false;
-        }
-        
-        public String toString() {
-            StringBuilder res = new StringBuilder();
-            if ((interestOps & SelectionKey.OP_READ) != 0) {
-                res.append("read");
-            }
-            if ((interestOps & SelectionKey.OP_WRITE) != 0) {
-                res.append("write");
-            }
-            if ((interestOps & SelectionKey.OP_CONNECT) != 0) {
-                res.append("connet");
-            }
-            if ((interestOps & SelectionKey.OP_ACCEPT) != 0) {
-                res.append("accept");
-            }
-            res.append(", ").append("promise:").append(promise);
-            return res.toString();
-        }
-    }
 
     public NioSelector() throws IOException {
         this.setName("NioSelector");
     }
     
-    public void register(Event msg) {
+    public void register(NioEvent msg) {
         queue.offer(msg);
         selector.wakeup();
     }
@@ -88,31 +54,11 @@ public class NioSelector extends Thread {
             
             while (isValid) {
                 try {
-                    int n = selector.select();
                     boolean hasEvent = false;
                     
-                    if (n > 0) {
-                        hasEvent = true;
-                        Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                        Iterator<SelectionKey> iterator = selectionKeys.iterator();
-                        while (iterator.hasNext()) {
-                            SelectionKey selectionKey = iterator.next();
-                            iterator.remove();
-                            handleKey(selectionKey);
-                        }
-                    }
+                    if (doRegister()) hasEvent = true;
                     
-                    Event msg = queue.poll();
-                    while (msg != null) {
-                        
-                        SelectionKey key = msg.socket.register(selector, msg.interestOps);
-                        key.attach(msg);
-                        
-                        if (debug) System.out.println("register event: "+msg);
-                        
-                        msg = queue.poll();
-                        hasEvent = true;
-                    }
+                    if (doSelect()) hasEvent = true;
                     
                     if (!hasEvent) {
                         Thread.sleep(1);
@@ -126,15 +72,72 @@ public class NioSelector extends Thread {
             Logger.getLogger(NioSelector.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    private boolean doSelect() throws IOException {
+        int n = selector.select();
+        if (n > 0) {
+            Set<SelectionKey> selectionKeys = selector.selectedKeys();
+            Iterator<SelectionKey> iterator = selectionKeys.iterator();
+            while (iterator.hasNext()) {
+                SelectionKey selectionKey = iterator.next();
+                iterator.remove();
+                handleKey(selectionKey);
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private boolean doRegister() throws ClosedChannelException {
+        boolean hasEvent = false;
+        while (true) {
+            NioEvent msg = queue.poll();
+            if (msg == null) break;
+            
+            try {
+                if (msg.closed) {
+                    if (msg.selectionKey != null) {
+                        msg.selectionKey.cancel();
+                    }
+                }
+                else {
+                    if (msg.selectionKey != null) {
+                        msg.selectionKey.interestOps(msg.interestOps);
+                        if (debug) System.out.println("reset event: "+msg);
+                    }
+                    else {
+                        SelectionKey key = msg.socket.register(selector, msg.interestOps);
+                        key.attach(msg);
+                        msg.selectionKey = key;
+                        if (debug) System.out.println("register event: "+msg);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            hasEvent = true;
+        }
+        return hasEvent;
+    }
 
     private void handleKey(SelectionKey selectionKey) throws IOException {
         try {
-            Event event = (Event) selectionKey.attachment();
-            selectionKey.interestOps(0);
+            NioEvent event = (NioEvent) selectionKey.attachment();
             
-            if (debug) System.out.println("handle event: "+event);
+            if (!selectionKey.isValid()) {
+                if (debug) System.out.println("invalid event: "+event);
+                selectionKey.cancel();
+                return;
+            }
             
-            event.handler.send(event);
+            if ((event.interestOps & selectionKey.readyOps()) != 0) {
+                selectionKey.interestOps(0);
+            
+                if (debug) System.out.println("handle event: "+event);
+
+                event.handler.send(event);
+            }
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

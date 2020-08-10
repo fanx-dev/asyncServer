@@ -10,7 +10,7 @@ import fan.sys.Func;
 import java.nio.channels.SocketChannel;
 
 /**
- * Handler to support async await
+ * Handler to support async/await
  */
 public abstract class Handler extends Worker {
     Map locals = Map.make();

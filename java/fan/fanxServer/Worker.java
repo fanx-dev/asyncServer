@@ -31,13 +31,13 @@ public class Worker implements Runnable {
     NioSelector selector;
     WorkerFactory factory;
     
-    private Queue<Object> queue = new LinkedList<Object>();
+    private Queue<Runnable> queue = new LinkedList<Runnable>();
     volatile boolean isRunning = false;
     
     public Worker() {
     }
     
-    public void send(Object msg) {
+    public void send(Runnable msg) {
         synchronized(this) {
             queue.offer(msg);
             if (!isRunning) {
@@ -53,7 +53,7 @@ public class Worker implements Runnable {
             onRunning();
         }
         while (true) {
-            Object msg = null;
+            Runnable msg = null;
             synchronized(this) {
                 msg = queue.poll();
                 if (msg == null) {
@@ -62,18 +62,11 @@ public class Worker implements Runnable {
                 }
             }
             
-            if (msg instanceof NioSelector.Event) {
-                NioSelector.Event event = (NioSelector.Event)msg;
-                dispatchNioEvent(event);
+            try {
+                msg.run();
             }
-            else if (msg instanceof Runnable) {
-                Runnable r = (Runnable)msg;
-                try {
-                    r.run();
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
+            catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -82,90 +75,6 @@ public class Worker implements Runnable {
         
     }
     
-    private void dispatchNioEvent(NioSelector.Event event) {
-        Promise promise = (Promise)event.promise;
-        if (promise == null) {
-            //new comming
-            try {
-                onService(event.socket);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return;
-        }
-
-        try {
-            if ((event.interestOps & SelectionKey.OP_READ) != 0) {
-                onReadable(event);
-            }
-            else if ((event.interestOps & SelectionKey.OP_WRITE) != 0) {
-                onWritable(event);
-            }
-            else if ((event.interestOps & SelectionKey.OP_CONNECT) != 0) {
-                onConnect(event);
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            promise.complete(e, false);
-        }
-    }
-    
-    private void onReadable(NioSelector.Event event) throws IOException {
-        Promise promise = (Promise)event.promise;
-        NioBuf buf = (NioBuf)event.buffer;
-            
-        NioBufPeer peer = buf.peer;
-        int n = event.socket.read(peer.toByteBuffer());
-        
-        if (n < 0) {
-            event.finished = true;
-            promise.complete(event.readOrWriteSize, true);
-            return;
-        }
-        
-        event.readOrWriteSize += n;
-
-        if (event.expectSize <= event.readOrWriteSize) {
-            event.finished = true;
-            promise.complete(event.readOrWriteSize, true);
-        }
-        else {
-            selector.register(event);
-        }
-    }
-    
-    private void onWritable(NioSelector.Event event) throws IOException {
-        Promise promise = (Promise)event.promise;
-        NioBuf buf = (NioBuf)event.buffer;
-            
-        NioBufPeer peer = buf.peer;
-        int n = event.socket.write(peer.toByteBuffer());
-        
-        if (n < 0) {
-            event.finished = true;
-            promise.complete(event.readOrWriteSize, true);
-            return;
-        }
-        
-        event.readOrWriteSize += n;
-
-        if (event.expectSize <= event.readOrWriteSize) {
-            event.finished = true;
-            promise.complete(event.readOrWriteSize, true);
-        }
-        else {
-            selector.register(event);
-        }
-    }
-    
-    private void onConnect(NioSelector.Event msg) throws IOException {
-        Promise promise = (Promise)msg.promise;
-        SocketChannel client = msg.socket;
-        msg.finished = true;
-        client.finishConnect();
-        promise.complete(client, true);
-    }
     
     public void onService(SocketChannel socket) {
         
@@ -173,9 +82,9 @@ public class Worker implements Runnable {
     
     public Promise read(SocketChannel socket, Buf buf, long size) {
         final Promise promise = Promise$.make();
-        NioSelector.Event event = new NioSelector.Event(socket, this);
+        NioEvent event = new NioEvent(socket, this);
         event.promise = promise;
-        event.buffer = buf;
+        event.buffer = (NioBuf)buf;
         event.expectSize = size;
         
         selector.register(event);
@@ -184,10 +93,10 @@ public class Worker implements Runnable {
     
     public Promise write(SocketChannel socket, Buf buf, long size) {
         final Promise promise = Promise$.make();
-        NioSelector.Event event = new NioSelector.Event(socket, this);
+        NioEvent event = new NioEvent(socket, this);
         event.interestOps = SelectionKey.OP_WRITE;
         event.promise = promise;
-        event.buffer = buf;
+        event.buffer = (NioBuf)buf;
         event.expectSize = size;
         
         selector.register(event);
@@ -204,7 +113,7 @@ public class Worker implements Runnable {
             InetSocketAddress addr = new InetSocketAddress(host, port);
             socketChannel.connect(addr);
             
-            NioSelector.Event event = new NioSelector.Event(socketChannel, this);
+            NioEvent event = new NioEvent(socketChannel, this);
             event.interestOps = SelectionKey.OP_CONNECT;
             event.promise = promise;
             

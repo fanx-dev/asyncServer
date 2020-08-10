@@ -60,7 +60,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         boot(args);
         int port = 8888;
-        Connector server = new Connector("localhost", port, new WorkerFactory(5) {
+        Connector server = new Connector("localhost", port, new WorkerFactory(10) {
             @Override
             public Worker create() {
                 return new TestHandler();
