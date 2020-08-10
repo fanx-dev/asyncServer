@@ -87,6 +87,12 @@ public class NioEvent implements Runnable {
                 handler.onService(this.socket);
             } catch (Exception e) {
                 e.printStackTrace();
+                this.cancel();
+                try {
+                    this.socket.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
             return;
         }
@@ -129,6 +135,13 @@ public class NioEvent implements Runnable {
         
         this.readOrWriteSize += n;
 
+        if (NioSelector.debug) {
+            System.out.println("onReadable: n:"+n
+             +", expectSize:"+this.expectSize
+             +", readOrWriteSize:"+this.readOrWriteSize
+             +", buf:"+peer.toByteBuffer());
+        }
+
         if (this.expectSize <= this.readOrWriteSize) {
             this.cancel();
             promise.complete(this.readOrWriteSize, true);
@@ -152,6 +165,13 @@ public class NioEvent implements Runnable {
         }
         
         this.readOrWriteSize += n;
+
+        if (NioSelector.debug) {
+            System.out.println("onWritable: n:"+n
+             +", expectSize:"+this.expectSize
+             +", readOrWriteSize:"+this.readOrWriteSize
+             +", buf:"+peer.toByteBuffer());
+        }
 
         if (this.expectSize <= this.readOrWriteSize) {
             this.cancel();

@@ -29,7 +29,9 @@ public abstract class Handler extends Worker {
         async.then(new Func(){
                     @Override
                     public Object call(Object result, Object err) {
-                        
+                        if (err != null) {
+                            ((Err)err).trace();
+                        }
                         if (debug) System.out.println("close socket:"+socket);
                         f.close();
                         return null;
