@@ -70,7 +70,10 @@ class HttpReq {
       //echo("n:$n, buf:$buf")
       if (n < 0) {
         buf.seek(start)
-        return buf.readAllStr
+        if (buf.remaining > 0) {
+          return buf.readAllStr
+        }
+        throw IOErr("EOF")
       }
     }
     return ""

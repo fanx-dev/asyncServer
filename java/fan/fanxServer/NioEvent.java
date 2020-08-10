@@ -8,6 +8,7 @@ package fan.fanxServer;
 import fan.concurrent.Promise;
 import fan.std.NioBuf;
 import fan.std.NioBufPeer;
+import fan.sys.IOErr;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -107,6 +108,9 @@ public class NioEvent implements Runnable {
             else if ((this.interestOps & SelectionKey.OP_CONNECT) != 0) {
                 onConnect();
             }
+            else {
+                System.out.println("Unknow event:"+this.selectionKey.readyOps());
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -127,20 +131,25 @@ public class NioEvent implements Runnable {
         NioBufPeer peer = buf.peer;
         int n = this.socket.read(peer.toByteBuffer());
         
+        if (NioSelector.debug) {
+            System.out.println("onReadable: n:"+n
+             +", expectSize:"+this.expectSize
+             +", readOrWriteSize:"+(this.readOrWriteSize+n)
+             +", buf:"+peer.toByteBuffer());
+        }
+        
         if (n < 0) {
             this.cancel();
-            promise.complete(this.readOrWriteSize, true);
+            if (this.readOrWriteSize == 0) {
+                promise.complete(-1L, true);
+            }
+            else {
+                promise.complete(this.readOrWriteSize, true);
+            }
             return;
         }
         
         this.readOrWriteSize += n;
-
-        if (NioSelector.debug) {
-            System.out.println("onReadable: n:"+n
-             +", expectSize:"+this.expectSize
-             +", readOrWriteSize:"+this.readOrWriteSize
-             +", buf:"+peer.toByteBuffer());
-        }
 
         if (this.expectSize <= this.readOrWriteSize) {
             this.cancel();
@@ -158,20 +167,25 @@ public class NioEvent implements Runnable {
         NioBufPeer peer = buf.peer;
         int n = this.socket.write(peer.toByteBuffer());
         
+        if (NioSelector.debug) {
+            System.out.println("onWritable: n:"+n
+             +", expectSize:"+this.expectSize
+             +", readOrWriteSize:"+(this.readOrWriteSize+n)
+             +", buf:"+peer.toByteBuffer());
+        }
+        
         if (n < 0) {
             this.cancel();
-            promise.complete(this.readOrWriteSize, true);
+            if (this.readOrWriteSize == 0) {
+                promise.complete(IOErr.make("EOF"), false);
+            }
+            else {
+                promise.complete(this.readOrWriteSize, true);
+            }
             return;
         }
         
         this.readOrWriteSize += n;
-
-        if (NioSelector.debug) {
-            System.out.println("onWritable: n:"+n
-             +", expectSize:"+this.expectSize
-             +", readOrWriteSize:"+this.readOrWriteSize
-             +", buf:"+peer.toByteBuffer());
-        }
 
         if (this.expectSize <= this.readOrWriteSize) {
             this.cancel();
