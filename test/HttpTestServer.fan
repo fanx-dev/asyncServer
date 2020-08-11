@@ -6,12 +6,14 @@ class HttpTestServer : HttpHandler {
   override async Void onHttpService(HttpReq req, HttpRes res) {
     echo("Server receive: "+req.headers)
     res.headers["Content-Type"] = "text/html; charset=utf-8"
-    res.buf.printLine("<html>
+
+    buf := NioBuf.makeMem(1024)
+    buf.printLine("<html>
                         <body>Hello World</body>
                        </html>")
-
-    await res.finish
-    //return true
+    buf.flip
+    //await res.writeFixed(buf)
+    await res.writeChunk(buf)
   }
 
   static Void main() {
