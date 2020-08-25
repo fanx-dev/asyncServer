@@ -79,50 +79,8 @@ public class Worker implements Runnable {
     public void onService(SocketChannel socket) {
         
     }
-    
-    public Promise read(SocketChannel socket, Buf buf, long size) {
-        final Promise promise = Promise$.make();
-        NioEvent event = new NioEvent(socket, this);
-        event.promise = promise;
-        event.buffer = (NioBuf)buf;
-        event.expectSize = size;
-        
-        selector.register(event);
-        return promise;
-    }
-    
-    public Promise write(SocketChannel socket, Buf buf, long size) {
-        final Promise promise = Promise$.make();
-        NioEvent event = new NioEvent(socket, this);
-        event.interestOps = SelectionKey.OP_WRITE;
-        event.promise = promise;
-        event.buffer = (NioBuf)buf;
-        event.expectSize = size;
-        
-        selector.register(event);
-        return promise;
-    }
+
     
     
-    public Promise connect(String host, int port) {
-        final Promise promise = Promise$.make();
-        try {
-            SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            
-            InetSocketAddress addr = new InetSocketAddress(host, port);
-            socketChannel.connect(addr);
-            
-            NioEvent event = new NioEvent(socketChannel, this);
-            event.interestOps = SelectionKey.OP_CONNECT;
-            event.promise = promise;
-            
-            selector.register(event);
-            return promise;
-        } catch (IOException ex) {
-            promise.complete(ex, false);
-            return promise;
-        }
-    }
     
 }

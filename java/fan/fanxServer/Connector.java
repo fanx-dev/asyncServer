@@ -104,10 +104,10 @@ public class Connector extends Thread {
                 return;
             }
             
-            Worker handler = (Worker) workerFactory.create();
-            handler.selector = nioSelector;
-            handler.factory = workerFactory;
-            NioEvent event = new NioEvent(client, handler);
+            Worker worker = (Worker) workerFactory.create();
+            worker.selector = nioSelector;
+            worker.factory = workerFactory;
+            NioEvent event = new NioEvent(client, worker);
             
             if (debug) System.out.println("accept event: "+event);
             nioSelector.register(event);

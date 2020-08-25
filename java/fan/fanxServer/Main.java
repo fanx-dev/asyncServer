@@ -25,9 +25,12 @@ public class Main {
         @Override
         public void onService(SocketChannel socket) {
             System.out.println("user accept:"+socket);
+
+            Socket s = Socket.make();
+            s.init(this, socket);
             
             Buf buf = NioBuf.makeMem(1024);
-            Promise promise = this.read(socket, buf, 1);
+            Promise promise = s.read(buf, 1);
             promise.then(new Func(){
                 @Override
                 public Object call(Object result, Object err) {
@@ -41,9 +44,9 @@ public class Main {
                     buf.printLine("Hello");
                     buf.flip();
                     System.out.println("user send:"+buf);
-                    TestHandler.this.write(socket, buf, 1);
+                    s.write(buf, 1);
                     
-                    TestHandler.this.connect("www.baidu.com", 80);
+                    //TestHandler.this.connect("www.baidu.com", 80);
                     
                     return null;
                 }

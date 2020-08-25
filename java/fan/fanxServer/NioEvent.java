@@ -23,7 +23,7 @@ public class NioEvent implements Runnable {
     
     SocketChannel socket;
     int interestOps;
-    Worker handler;
+    Worker worker;
     SelectionKey selectionKey;
     
     //user data
@@ -39,7 +39,7 @@ public class NioEvent implements Runnable {
     public NioEvent(SocketChannel socket, Worker handler) {
         this.socket = socket;
         interestOps = SelectionKey.OP_READ;
-        this.handler = handler;
+        this.worker = handler;
         finished = false;
         closed = false;
     }
@@ -54,7 +54,7 @@ public class NioEvent implements Runnable {
     }
     
     public void register() {
-        handler.selector.register(this);
+        worker.selector.register(this);
     }
 
     public String toString() {
@@ -85,7 +85,7 @@ public class NioEvent implements Runnable {
         if (promise == null) {
             //new comming
             try {
-                handler.onService(this.socket);
+                worker.onService(this.socket);
             } catch (Exception e) {
                 e.printStackTrace();
                 this.cancel();
@@ -201,7 +201,11 @@ public class NioEvent implements Runnable {
         SocketChannel client = this.socket;
         this.cancel();
         client.finishConnect();
-        promise.complete(client, true);
+
+        Socket f = Socket.make();
+        f.init(worker, client);
+        //System.out.println("onConnect:"+f);
+        promise.complete(f, true);
     }
     
 }

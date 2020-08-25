@@ -135,7 +135,7 @@ public class NioSelector extends Thread {
             
                 if (debug) System.out.println("handle event: "+event);
 
-                event.handler.send(event);
+                event.worker.send(event);
             }
             
         } catch (Exception e) {
