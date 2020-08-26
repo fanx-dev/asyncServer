@@ -51,38 +51,23 @@ public abstract class Handler extends Worker {
         这个async.runner做的事情就是给Promise连接一个完成回调，回调在指定线程looper执行。async.runner和当前的worker一一对应。
         因为共享执行线程，所以每次Actor.locals都有初始化。
         */
-        fan.concurrent.Actor.locals().set("async.runner", new Func() {
-            @Override
-            public Object call(Object o) {
-                Async s = (Async)o;
-                runAsync(s);
-                return null;
-            }
-        });
+        fan.concurrent.Actor.locals().set("async.runner", asyncRunner);
     }
-    
-    private void runAsync(Async s) {
-        if (s.next()) {
-            Object awaitObj = s.awaitObj;
-            if (awaitObj instanceof Promise) {
-                Promise promise = (Promise)awaitObj;
-                promise.then(new Func(){
-                    @Override
-                    public Object call(Object result, Object err) {
-                        s.awaitObj = result;
-                        s.err = (Err)err;
-                        Handler.this.send(new Runnable() {
-                            @Override
-                            public void run() {
-                                //continue call Actor.locals["async.runner"]
-                                //s.run();
-                                runAsync(s);
-                            }
-                        });
-                        return null;
-                    }
-                });
-            }
+
+    private IOAsyncRunner asyncRunner = new IOAsyncRunner();
+
+    class IOAsyncRunner implements fan.concurrent.AsyncRunner {
+
+        @Override public boolean awaitOther(Async s, Object awaitObj) {
+            return false;
+        }
+        @Override public void run(Async s) {
+            Handler.this.send(new Runnable() {
+                @Override
+                public void run() {
+                    s.step();
+                }
+            });
         }
     }
     
