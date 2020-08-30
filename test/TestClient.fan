@@ -1,7 +1,7 @@
 
 
 
-class TestClient : HttpHandler {
+const class TestClient : HttpHandler {
 
   override async Void onHttpService(HttpReq req, HttpRes res) {
     echo("Server receive: "+req.uri)
@@ -21,7 +21,7 @@ class TestClient : HttpHandler {
   static Void main() {
     Server {
       port = 8081
-      handler = TestClient#
+      handler = TestClient()
     }.start
   }
 }

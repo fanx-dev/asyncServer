@@ -37,7 +37,7 @@ public class Socket {
         event.buffer = (NioBuf)buf;
         event.expectSize = size;
         
-        worker.selector.register(event);
+        worker.getSelector().register(event);
         return promise;
     }
 
@@ -53,7 +53,7 @@ public class Socket {
         event.buffer = (NioBuf)buf;
         event.expectSize = size;
         
-        worker.selector.register(event);
+        worker.getSelector().register(event);
         return promise;
     }
     
@@ -87,7 +87,7 @@ public class Socket {
             event.interestOps = SelectionKey.OP_CONNECT;
             event.promise = promise;
             
-            worker.selector.register(event);
+            worker.getSelector().register(event);
             return promise;
         } catch (IOException ex) {
             promise.complete(ex, false);

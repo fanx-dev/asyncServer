@@ -1,6 +1,9 @@
 
 using concurrent
 
+**
+** TCP endpoint.
+**
 native class Socket {
   Promise<Int> read(Buf buf, Int size)
   Promise<Int> write(Buf buf, Int size := buf.remaining)
@@ -9,6 +12,17 @@ native class Socket {
   static Promise<Socket> connect(Str host, Int port)
 }
 
-native abstract class Handler {
+**
+** incoming callback in server socket
+**
+native const mixin Handler {
   abstract async Void onService(Socket socket)
+}
+
+**
+** Context Adapter to support concurrent::Acotr
+**
+native const class ActorWorker {
+  static ActorWorker fromActor(Actor actor)
+  Bool onReceive(Obj? obj)
 }

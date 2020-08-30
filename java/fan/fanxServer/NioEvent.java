@@ -54,7 +54,7 @@ public class NioEvent implements Runnable {
     }
     
     public void register() {
-        worker.selector.register(this);
+        worker.getSelector().register(this);
     }
 
     public String toString() {

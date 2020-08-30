@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class Main {
     
-    static class TestHandler extends Worker {
+    static class TestWorker extends AbstractWorker {
         @Override
         public void onService(SocketChannel socket) {
             System.out.println("user accept:"+socket);
@@ -65,8 +65,11 @@ public class Main {
         int port = 8888;
         Connector server = new Connector("localhost", port, new WorkerFactory(10) {
             @Override
-            public Worker create() {
-                return new TestHandler();
+            public Worker create(NioSelector selector) {
+                AbstractWorker w = new TestWorker();
+                w.setPool(this);
+                w.setSelector(selector);
+                return w;
             }
         }, 10240);
         server.start();

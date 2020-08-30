@@ -1,7 +1,7 @@
 
 
 
-class HttpTestServer : HttpHandler {
+const class HttpTestServer : HttpHandler {
 
   override async Void onHttpService(HttpReq req, HttpRes res) {
     echo("Server receive: "+req.headers)
@@ -19,7 +19,7 @@ class HttpTestServer : HttpHandler {
   static Void main() {
     Server {
       port = 8080
-      handler = HttpTestServer#
+      handler = HttpTestServer()
     }.start
   }
 }

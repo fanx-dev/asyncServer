@@ -26,61 +26,10 @@ import java.util.logging.Logger;
  *
  * @author yangjiandong
  */
-public class Worker implements Runnable {
-    
-    NioSelector selector;
-    WorkerFactory factory;
-    
-    private Queue<Runnable> queue = new LinkedList<Runnable>();
-    volatile boolean isRunning = false;
-    
-    public Worker() {
-    }
-    
-    public void send(Runnable msg) {
-        synchronized(this) {
-            queue.offer(msg);
-            if (!isRunning) {
-                factory.getWorkThreadPool().execute(this);
-            }
-        }
-    }
+public interface Worker {
+    public void sendTask(Runnable msg);
 
-    @Override
-    public void run() {
-        synchronized(this) {
-            isRunning = true;
-            onRunning();
-        }
-        while (true) {
-            Runnable msg = null;
-            synchronized(this) {
-                msg = queue.poll();
-                if (msg == null) {
-                    isRunning = false;
-                    break;
-                }
-            }
-            
-            try {
-                msg.run();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+    public void onService(SocketChannel socket);
     
-    protected void onRunning() {
-        
-    }
-    
-    
-    public void onService(SocketChannel socket) {
-        
-    }
-
-    
-    
-    
+    public NioSelector getSelector();
 }

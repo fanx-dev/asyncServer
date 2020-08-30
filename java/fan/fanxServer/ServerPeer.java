@@ -11,18 +11,29 @@ public class ServerPeer {
     }
     
     public void start(Server self) {
+        start(self, true);
+    }
+    
+    public void start(Server self, boolean join) {
         Connector server = new Connector(self.host(), (int)self.port(),
           new WorkerFactory((int)self.threadSize()) {
             @Override
-            public Worker create() {
-                return self.create();
+            Worker create(NioSelector selector) {
+                AsyncWorker w = new AsyncWorker();
+                w.setPool(this);
+                w.setSelector(selector);
+                w.handler = self.handler;
+                return w;
             }
         }, (int)self.limit());
         server.start();
-        try {
-            server.join();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
+        
+        if (join) {
+            try {
+                server.join();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }

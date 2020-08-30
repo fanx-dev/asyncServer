@@ -25,16 +25,30 @@ import java.util.logging.Logger;
  * Watch the IO event
  */
 public class NioSelector extends Thread {
-    
+    public static NioSelector defaultSelector = null;
     public static boolean debug = false;
 
     private Selector selector;
     private Queue<NioEvent> queue = new ConcurrentLinkedQueue<NioEvent>();
     private boolean isValid = true;
     
+    
+    public static NioSelector getDefaultSelector() {
+        if (defaultSelector == null) {
+            try {
+                defaultSelector = new NioSelector();
+                defaultSelector.start();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return defaultSelector;
+    }
+    
 
     public NioSelector() throws IOException {
         this.setName("NioSelector");
+        selector = Selector.open();
     }
     
     public void register(NioEvent msg) {
@@ -50,8 +64,6 @@ public class NioSelector extends Thread {
     @Override
     public void run() {
         try {
-            selector = Selector.open();
-            
             while (isValid) {
                 try {
                     boolean hasEvent = false;
@@ -135,7 +147,7 @@ public class NioSelector extends Thread {
             
                 if (debug) System.out.println("handle event: "+event);
 
-                event.worker.send(event);
+                event.worker.sendTask(event);
             }
             
         } catch (Exception e) {

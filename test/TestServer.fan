@@ -1,6 +1,6 @@
 
 
-class TestServer : Handler {
+const class TestServer : Handler {
 
   override async Void onService(Socket socket) {
     buf := NioBuf.makeMem(1024)
@@ -21,7 +21,7 @@ class TestServer : Handler {
   static Void main() {
     Server {
       port = 8080
-      handler = TestServer#
+      handler = TestServer()
     }.start
   }
 }

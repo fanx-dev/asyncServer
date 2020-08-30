@@ -34,6 +34,5 @@ abstract class WorkerFactory {
     
     public void close() { workThreadPool.shutdown(); }
     
-    abstract Worker create();
-    
+    abstract Worker create(NioSelector selector);
 }
