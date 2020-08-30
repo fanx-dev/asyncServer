@@ -18,6 +18,10 @@ class HttpClient {
     this.buf.size = 0
   }
 
+  Void close() {
+    socket?.close
+  }
+
   async Void get(Uri uri) {
     if (socket == null) {
       socket = await Socket.connect(host, port)

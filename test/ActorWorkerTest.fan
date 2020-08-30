@@ -24,6 +24,7 @@ const class ActorWorkerTest : Actor {
         if (buf == null) break
         echo(buf.readAllStr)
     }
+    client.close
   }
 
   static Void main() {

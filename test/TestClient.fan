@@ -16,6 +16,7 @@ const class TestClient : HttpHandler {
         if (buf == null) break
         await res.writeChunk(buf)
     }
+    client.close
   }
 
   static Void main() {
