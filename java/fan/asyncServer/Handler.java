@@ -1,9 +1,9 @@
 
-package fan.fanxServer;
+package fan.asyncServer;
 
 import fan.concurrent.Async;
 import fan.concurrent.Promise;
-import static fan.fanxServer.NioSelector.debug;
+import static fan.asyncServer.NioSelector.debug;
 import fan.std.Map;
 import fan.sys.Err;
 import fan.sys.Func;

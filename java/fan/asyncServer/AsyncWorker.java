@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package fan.fanxServer;
+package fan.asyncServer;
 
 import fan.concurrent.Async;
-import static fan.fanxServer.NioSelector.debug;
+import static fan.asyncServer.NioSelector.debug;
 import fan.sys.Err;
 import fan.sys.Func;
 import java.nio.channels.SocketChannel;

@@ -3,10 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package fan.fanxServer;
+package fan.asyncServer;
 
 import fan.concurrent.Promise;
-import fan.fanxServer.WorkerFactory;
 import fan.std.Buf;
 import fan.std.NioBuf;
 import fan.sys.Func;

@@ -1,5 +1,5 @@
 
-package fan.fanxServer;
+package fan.asyncServer;
 
 import java.io.IOException;
 import java.util.logging.Level;

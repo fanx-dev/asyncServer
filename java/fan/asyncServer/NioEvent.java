@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package fan.fanxServer;
+package fan.asyncServer;
 
 import fan.concurrent.Promise;
 import fan.std.NioBuf;

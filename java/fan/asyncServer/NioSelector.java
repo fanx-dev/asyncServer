@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package fan.fanxServer;
+package fan.asyncServer;
 
-import static fan.fanxServer.NioSelector.debug;
+import static fan.asyncServer.NioSelector.debug;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
