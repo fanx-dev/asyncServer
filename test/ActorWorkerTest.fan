@@ -14,17 +14,22 @@ const class ActorWorkerTest : Actor {
 
 
   async Void test() {
-    client := HttpClient("www.baidu.com", 80)
-    //echo("debug1")
-    await client.get(`/`)
-    //echo("debug2")
+    client := HttpClient("localhost", 8080)
+    await doReq(client)
+    await doReq(client)
+    client.close
+  }
+
+  private async Void doReq(HttpClient client) {
+    echo("debug1")
+    await client.get(`/abc`)
+    echo("debug2")
 
     while (true) {
         buf := await client.read
         if (buf == null) break
         echo(buf.readAllStr)
     }
-    client.close
   }
 
   static Void main() {

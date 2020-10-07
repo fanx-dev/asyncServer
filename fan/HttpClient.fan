@@ -26,7 +26,7 @@ class HttpClient {
     if (socket == null) {
       socket = await Socket.connect(host, port)
     }
-    
+    buf.clear
     buf.print("GET $uri HTTP/1.1\r\n")
     buf.print("Host: $host\r\n")
     //buf.print("User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.6)\r\n")
@@ -89,7 +89,8 @@ class HttpClient {
       //read:\r\n
       length += 2
       nbuf = NioBuf.makeMem(length)
-      nbuf.writeBuf(buf)
+      //echo("$nbuf, $buf")
+      nbuf.writeBuf(buf, length.min(buf.remaining))
       if (length-nbuf.pos > 0) {
         await socket.read(nbuf, length-nbuf.pos)
       }
