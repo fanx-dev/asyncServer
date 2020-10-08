@@ -15,8 +15,24 @@ const class ActorWorkerTest : Actor {
 
   async Void test() {
     client := HttpClient("localhost", 8080)
-    await doReq(client)
-    await doReq(client)
+
+    try {
+      await doReq(client)
+    }
+    catch (Err e){
+      echo("ERROR1: $e")
+    }
+
+    echo("end doReq1")
+
+    try {
+      await doReq(client)
+    }
+    catch (Err e2) {
+      echo("ERROR2: $e2")
+    }
+
+    echo("end doReq2")
     client.close
   }
 

@@ -113,8 +113,8 @@ public class NioEvent implements Runnable {
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
-            promise.complete(e, false);
+            //e.printStackTrace();
+            promise.complete(new fan.sys.Err(e), false);
             this.cancel();
             try {
                 this.socket.close();
