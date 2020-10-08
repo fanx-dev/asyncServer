@@ -71,7 +71,7 @@ class HttpClient {
       length = headers["Content-Length"].toInt
       //echo("length:$length")
       nbuf = NioBuf.makeMem(length)
-      nbuf.writeBuf(buf)
+      nbuf.writeBuf(buf, length.min(buf.remaining))
       if (length-nbuf.pos > 0) {
         await socket.read(nbuf, length-nbuf.pos)
       }
