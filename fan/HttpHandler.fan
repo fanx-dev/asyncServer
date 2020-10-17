@@ -4,9 +4,12 @@ const abstract class HttpHandler : Handler {
   override async Void onService(Socket socket) {
     //echo("onService: $socket")
     while (true) {
-      close := await doHttp(socket)
-      //echo("Connection close: $close, $socket")
-      if (close) break
+      try {
+        close := await doHttp(socket)
+        //echo("Connection close: $close, $socket")
+        if (close) break
+      }
+      catch (IOErr e) { break }
     }
   }
 
