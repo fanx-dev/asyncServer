@@ -7,6 +7,7 @@ class HttpReq {
   Uri? uri
   Str? ver
   [Str:Str]? headers
+  private Bool moreBuf
 
   new make(Socket socket) {
     this.socket = socket
@@ -37,7 +38,47 @@ class HttpReq {
     }
 
     //echo("end parse: $headers")
+    if (method == "POST") moreBuf = true
     return this
+  }
+
+  async Buf? read() {
+    if (!moreBuf) return null
+    //echo("readBuf")
+    length := 0
+    Buf? nbuf
+    if (headers["Content-Length"] != null) {
+      //echo("readContent-Length")
+      length = headers["Content-Length"].toInt
+      //echo("length:$length")
+      nbuf = NioBuf.makeMem(length)
+      nbuf.writeBuf(buf, length.min(buf.remaining))
+      if (length-nbuf.pos > 0) {
+        await socket.read(nbuf, length-nbuf.pos)
+      }
+      nbuf.flip
+      //echo("nbuf:$nbuf")
+      moreBuf = false
+      return nbuf
+    }
+    else if (headers["Transfer-Encoding"] == "chunked") {
+      //echo("readChunked")
+      line := await readLine
+      length = Int.fromStr(line, 16)
+      if (length == 0) moreBuf = false
+      //echo("length:$length")
+      //read:\r\n
+      length += 2
+      nbuf = NioBuf.makeMem(length)
+      //echo("$nbuf, $buf")
+      nbuf.writeBuf(buf, length.min(buf.remaining))
+      if (length-nbuf.pos > 0) {
+        await socket.read(nbuf, length-nbuf.pos)
+      }
+      nbuf.flip
+      return nbuf
+    }
+    throw Err("unsupport")
   }
 
   private async Str readLine() {

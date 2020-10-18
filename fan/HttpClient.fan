@@ -23,17 +23,27 @@ class HttpClient {
   }
 
   async Void get(Uri uri) {
+    Buf? data
+    await send("GET", uri, data)
+  }
+
+  async Bool send(Str method, Uri uri, Buf? data) {
     if (socket == null) {
       socket = await Socket.connect(host, port)
     }
     buf.clear
-    buf.print("GET $uri HTTP/1.1\r\n")
+    buf.print("$method $uri HTTP/1.1\r\n")
     buf.print("Host: $host\r\n")
     //buf.print("User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.6)\r\n")
+    if (data != null) {
+      buf.print("Content-Length: $data.size.toStr\r\n")
+    }
     buf.print("\r\n")
     buf.flip
-    //echo("$buf.readAllStr")
     await socket.write(buf)
+    if (data != null) {
+      await socket.write(data)
+    }
 
     buf.clear
   
@@ -59,6 +69,7 @@ class HttpClient {
       headers[key] = value
     }
     moreBuf = true
+    return true
   }
 
   async Buf? read() {
